@@ -143,25 +143,67 @@ router.post('/comment/:id', [auth,
         }    
 });
 
-router.delete('/comment/:id/:comment_id', auth, async(req, res)=>{
+// router.delete('/comment/:id/:comment_id', auth, async(req, res)=>{
+//     try {
+//         const post = await Post.findById(req.params.id)
+//         const comment = post.comments.find(comment=>comment.id === req.params._id)
+
+//         if(!comment){
+//             return res.status(404).json({msg: 'Comment does not exist'})
+//         }
+//         if(comment.user.toString()!==req.user.id){
+//             return res.status(401).json({msg: 'User not authorized'})
+//         }
+
+//         const removeIndex = post.comments.map(comment =>comment.user.toString()).indexOf(req.user.id);
+//         post.comments.splice(removeIndex, 1)
+//         await post.save()
+//         res.json(post.comments)
+//     } catch (err) {
+//         console.error(err.message);
+//         res.status(500).send('Server error')
+//     }
+// })
+
+router.delete("/comment/:id/:comment_id", auth, async (req, res) => {
     try {
-        const post = await Post.findById(req.params.id)
-        const comment = post.comments.find(comment=>comment.id === req.params._id)
-
-        if(!comment){
-            return res.status(404).json({msg: 'Comment does not exist'})
+        const post = await Post.findById(req.params.id);
+ 
+        /**
+         * Pull out comment
+         */
+        const comment = post.comments.find(
+            comment => comment.id.toString() === req.params.comment_id,
+        );
+ 
+        /**
+         * Make sure comment exists
+         */
+        if (!comment) {
+            return res.status(404).json({ msg: "Comment does not exist" });
         }
-        if(comment.user.toString()!==req.user.id){
-            return res.status(404).json({msg: 'User not authorized'})
+ 
+        /**
+         * Check current user is comment user
+         */
+        if (comment.user.toString() !== req.user.id) {
+            return res.status(401).json({ msg: "User not authorised" });
         }
-
-        const removeIndex = post.comments.map(comment =>comment.user.toString()).indexOf(req.user.id);
-        post.comments.splice(removeIndex, 1)
-        await post.save()
-        res.json(post.comments)
+ 
+        /**
+         * Delete the comment
+         */
+        comment.remove();
+ 
+        /**
+         * Save the post
+         */
+        await post.save();
+ 
+        res.json(post.comments);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server error')
+        res.status(500).send("Server error");
     }
-})
+});
 module.exports = router
